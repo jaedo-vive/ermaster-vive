@@ -1,4 +1,4 @@
-ermaster-nhit
+ermaster-vive
 =============
 
-Add more DBMS supports to ERMaster, Tibero and CUBRID.
+
