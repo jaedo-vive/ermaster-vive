@@ -1,6 +1,7 @@
 package org.insightech.er.editor.persistent.impl;
 
 import java.io.InputStream;
+import java.io.StringReader;
 import java.math.BigDecimal;
 import java.text.ParseException;
 import java.util.ArrayList;
@@ -11,6 +12,7 @@ import java.util.List;
 import java.util.Map;
 import java.util.Set;
 
+import javax.xml.XMLConstants;
 import javax.xml.parsers.DocumentBuilder;
 import javax.xml.parsers.DocumentBuilderFactory;
 
@@ -92,6 +94,7 @@ import org.w3c.dom.Document;
 import org.w3c.dom.Element;
 import org.w3c.dom.Node;
 import org.w3c.dom.NodeList;
+import org.xml.sax.InputSource;
 
 public class XMLLoader {
 
@@ -216,8 +219,10 @@ public class XMLLoader {
 								.get(referencedColumnId);
 						referencedColumnList.add(referencedColumn);
 
-						if (foreignKeyColumnSet.contains(referencedColumn)
-								&& foreignKeyColumn != referencedColumn) {
+						if (referencedColumn != null
+								&& foreignKeyColumn != referencedColumn
+								&& foreignKeyColumnSet
+										.remove(referencedColumn)) {
 							reduce(foreignKeyColumnSet, referencedColumn);
 						}
 
@@ -251,21 +256,49 @@ public class XMLLoader {
 	}
 
 	public ERDiagram load(InputStream in) throws Exception {
-		DocumentBuilder parser = DocumentBuilderFactory.newInstance()
-				.newDocumentBuilder();
+		DocumentBuilder parser = this.createDocumentBuilder();
 
 		Document document = parser.parse(in);
 
-		Node root = document.getFirstChild();
-
-		while (root.getNodeType() == Node.COMMENT_NODE) {
-			document.removeChild(root);
-			root = document.getFirstChild();
-		}
-
-		load((Element) root);
+		load(document.getDocumentElement());
 
 		return this.diagram;
+	}
+
+	private DocumentBuilder createDocumentBuilder() throws Exception {
+		DocumentBuilderFactory factory = DocumentBuilderFactory.newInstance();
+
+		this.setFeature(factory, XMLConstants.FEATURE_SECURE_PROCESSING, true);
+		this.setFeature(factory,
+				"http://xml.org/sax/features/external-general-entities",
+				false);
+		this.setFeature(factory,
+				"http://xml.org/sax/features/external-parameter-entities",
+				false);
+		this.setFeature(factory,
+				"http://apache.org/xml/features/nonvalidating/load-external-dtd",
+				false);
+
+		try {
+			factory.setXIncludeAware(false);
+		} catch (UnsupportedOperationException e) {
+		}
+
+		factory.setExpandEntityReferences(false);
+
+		DocumentBuilder parser = factory.newDocumentBuilder();
+		parser.setEntityResolver((publicId, systemId) -> new InputSource(
+				new StringReader("")));
+
+		return parser;
+	}
+
+	private void setFeature(DocumentBuilderFactory factory, String feature,
+			boolean value) {
+		try {
+			factory.setFeature(feature, value);
+		} catch (Exception e) {
+		}
 	}
 
 	private String getStringValue(Element element, String tagname) {

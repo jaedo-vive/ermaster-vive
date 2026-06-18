@@ -1,8 +1,8 @@
 package org.insightech.er.editor.view.action.zoom;
 
 import org.eclipse.gef.Disposable;
-import org.eclipse.gef.editparts.ZoomListener;
 import org.eclipse.gef.editparts.ZoomManager;
+import org.eclipse.draw2d.zoom.ZoomListener;
 import org.eclipse.jface.action.Action;
 import org.insightech.er.ERDiagramActivator;
 import org.insightech.er.ImageKey;
@@ -35,6 +35,7 @@ public class ZoomAdjustAction extends Action implements ZoomListener,
 		this.zoomManager.setZoomAsText(ZoomManager.FIT_ALL);
 	}
 
+	@Override
 	public void zoomChanged(double zoom) {
 		setEnabled(true);
 	}

@@ -31,9 +31,13 @@ public class SqlType implements Serializable {
 
 	public static final String SQL_TYPE_ID_BIG_SERIAL = "bigserial";
 
+	public static final String SQL_TYPE_ID_SMALL_SERIAL = "smallserial";
+
 	public static final String SQL_TYPE_ID_INTEGER = "integer";
 
 	public static final String SQL_TYPE_ID_BIG_INT = "bigint";
+
+	public static final String SQL_TYPE_ID_SMALL_INT = "smallint";
 
 	public static final String SQL_TYPE_ID_CHAR = "character";
 
@@ -246,6 +250,17 @@ public class SqlType implements Serializable {
 		return sqlType;
 	}
 
+	public static boolean isSerialType(SqlType sqlType) {
+		if (sqlType == null) {
+			return false;
+		}
+
+		String id = sqlType.getId();
+		return SQL_TYPE_ID_SERIAL.equals(id)
+				|| SQL_TYPE_ID_BIG_SERIAL.equals(id)
+				|| SQL_TYPE_ID_SMALL_SERIAL.equals(id);
+	}
+
 	public boolean isNeedLength(String database) {
 		String alias = this.getAlias(database);
 		if (alias == null) {
@@ -379,8 +394,11 @@ public class SqlType implements Serializable {
 	}
 
 	public static void main(String[] args) {
-		String targetDb = null;
-		targetDb = DB2DBManager.ID;
+		String targetDb = args != null && args.length > 0 ? args[0]
+				: DB2DBManager.ID;
+		if ("ALL".equalsIgnoreCase(targetDb)) {
+			targetDb = null;
+		}
 
 		boolean zerofill = false;
 		int testIntValue = 5;

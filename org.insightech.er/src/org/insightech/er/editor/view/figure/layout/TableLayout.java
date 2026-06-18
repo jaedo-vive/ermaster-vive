@@ -1,14 +1,12 @@
 package org.insightech.er.editor.view.figure.layout;
 
 import java.util.ArrayList;
-import java.util.Iterator;
+import java.util.Collections;
 import java.util.List;
 
 import org.eclipse.draw2d.AbstractHintLayout;
 import org.eclipse.draw2d.IFigure;
-import org.eclipse.draw2d.Polyline;
 import org.eclipse.draw2d.geometry.Dimension;
-import org.eclipse.draw2d.geometry.Point;
 import org.eclipse.draw2d.geometry.Rectangle;
 
 public class TableLayout extends AbstractHintLayout {
@@ -17,7 +15,7 @@ public class TableLayout extends AbstractHintLayout {
 
 	private int separatorWidth;
 
-	private List<IFigure> separators;
+	private List<Rectangle> separators;
 
 	public TableLayout(int colnum) {
 		super();
@@ -27,7 +25,7 @@ public class TableLayout extends AbstractHintLayout {
 			this.colnum = 1;
 		}
 
-		this.separators = new ArrayList<IFigure>();
+		this.separators = new ArrayList<Rectangle>();
 		this.separatorWidth = 1;
 	}
 
@@ -37,7 +35,8 @@ public class TableLayout extends AbstractHintLayout {
 
 	public void layout(IFigure parent) {
 
-		List children = this.clearSeparator(parent);
+		List<IFigure> children = this.getChildren(parent);
+		this.separators.clear();
 
 		List<List<IFigure>> table = this.getTable(children);
 		int[] columnWidth = this.getColumnWidth(table);
@@ -63,7 +62,7 @@ public class TableLayout extends AbstractHintLayout {
 				if (j != tableRow.size() - 1) {
 					Rectangle separetorRect = new Rectangle(x, y,
 							separatorWidth, rowHeight[i]);
-					this.addVerticalSeparator(parent, separetorRect);
+					this.addVerticalSeparator(separetorRect);
 
 					x += separatorWidth;
 				}
@@ -77,14 +76,14 @@ public class TableLayout extends AbstractHintLayout {
 				Rectangle separetorRect = new Rectangle(x, y, rect.width,
 						separatorWidth);
 
-				this.addHorizontalSeparator(parent, separetorRect);
+				this.addHorizontalSeparator(separetorRect);
 
 				y += separatorWidth;
 			}
 		}
 	}
 
-	private List<List<IFigure>> getTable(List children) {
+	private List<List<IFigure>> getTable(List<IFigure> children) {
 		int numChildren = children.size();
 
 		List<List<IFigure>> table = new ArrayList<List<IFigure>>();
@@ -97,7 +96,7 @@ public class TableLayout extends AbstractHintLayout {
 				table.add(row);
 			}
 
-			row.add((IFigure) children.get(i));
+			row.add(children.get(i));
 		}
 
 		return table;
@@ -142,29 +141,11 @@ public class TableLayout extends AbstractHintLayout {
 	private List<IFigure> getChildren(IFigure parent) {
 		List<IFigure> children = new ArrayList<IFigure>();
 
-		for (Iterator iter = parent.getChildren().iterator(); iter.hasNext();) {
-			IFigure child = (IFigure) iter.next();
-
-			if (!this.separators.contains(child)) {
-				children.add(child);
-			}
+		for (Object child : parent.getChildren()) {
+			children.add((IFigure) child);
 		}
 
 		return children;
-	}
-
-	private List clearSeparator(IFigure parent) {
-		for (Iterator iter = parent.getChildren().iterator(); iter.hasNext();) {
-			IFigure child = (IFigure) iter.next();
-
-			if (this.separators.contains(child)) {
-				iter.remove();
-			}
-		}
-
-		this.separators.clear();
-
-		return parent.getChildren();
 	}
 
 	/**
@@ -173,7 +154,7 @@ public class TableLayout extends AbstractHintLayout {
 	@Override
 	protected Dimension calculatePreferredSize(IFigure container, int wHint,
 			int hHint) {
-		List children = this.getChildren(container);
+		List<IFigure> children = this.getChildren(container);
 
 		List<List<IFigure>> table = this.getTable(children);
 		int[] columnWidth = this.getColumnWidth(table);
@@ -202,29 +183,25 @@ public class TableLayout extends AbstractHintLayout {
 		return new Dimension(width, height);
 	}
 
-	@SuppressWarnings("unchecked")
-	private void addVerticalSeparator(IFigure figure, Rectangle rect) {
-		Polyline separator = new Polyline();
-		separator.setLineWidth(separatorWidth);
-		separator.addPoint(new Point(rect.x, rect.y));
-		separator.addPoint(new Point(rect.x, rect.y + rect.height));
-
-		figure.getChildren().add(separator);
-		separator.setParent(figure);
-
-		this.separators.add(separator);
+	private void addVerticalSeparator(Rectangle rect) {
+		this.addSeparator(rect);
 	}
 
-	@SuppressWarnings("unchecked")
-	private void addHorizontalSeparator(IFigure figure, Rectangle rect) {
-		Polyline separator = new Polyline();
-		separator.setLineWidth(separatorWidth);
-		separator.addPoint(new Point(rect.x, rect.y));
-		separator.addPoint(new Point(rect.x + rect.width, rect.y));
-		figure.getChildren().add(separator);
-		separator.setParent(figure);
+	private void addHorizontalSeparator(Rectangle rect) {
+		this.addSeparator(rect);
+	}
 
-		this.separators.add(separator);
+	private void addSeparator(Rectangle rect) {
+		this.separators.add(new Rectangle(rect.x, rect.y, rect.width,
+				rect.height));
+	}
+
+	public List<Rectangle> getSeparators() {
+		return Collections.unmodifiableList(this.separators);
+	}
+
+	public int getSeparatorWidth() {
+		return this.separatorWidth;
 	}
 
 }

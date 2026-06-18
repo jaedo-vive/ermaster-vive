@@ -2,12 +2,14 @@ Manifest-Version: 1.0
 Bundle-ManifestVersion: 2
 Bundle-Name: ERMaster-NHIT
 Bundle-SymbolicName: org.insightech.er; singleton:=true
+Automatic-Module-Name: org.insightech.er
 Bundle-Version: 1.0.0.v20150619-0219
 Bundle-Activator: org.insightech.er.ERDiagramActivator
 Bundle-Localization: plugin
 Require-Bundle: org.eclipse.ui,
  org.eclipse.core.runtime,
  org.eclipse.gef,
+ org.eclipse.draw2d,
  org.eclipse.ui.views,
  org.eclipse.ui.ide,
  org.eclipse.core.resources,
@@ -22,12 +24,12 @@ Bundle-ActivationPolicy: lazy
 Bundle-ClassPath: .,
  lib/commons-codec-1.3.jar,
  lib/poi-3.7-20101029.jar,
+ lib/ermaster_ant.jar,
  resources/,
  template/,
  icons/,
  images/
-Bundle-RequiredExecutionEnvironment: J2SE-1.5
-Eclipse-LazyStart: true
+Bundle-RequiredExecutionEnvironment: JavaSE-21
 Bundle-Vendor: Insightech.org
 Export-Package: org.insightech.er,
  org.insightech.er.common.dialog,

@@ -827,6 +827,9 @@ public abstract class ImportFromDBManagerBase implements ImportFromDBManager {
 
 			SqlType sqlType = SqlType.valueOf(this.dbSetting.getDbsystem(),
 					type, size, decimal);
+			if (sqlType == null) {
+				sqlType = SqlType.valueOf(this.dbSetting.getDbsystem(), type);
+			}
 
 			if (sqlType == null || LOG_SQL_TYPE) {
 				logger.info(columnName + ": " + type + ", " + size + ", "
@@ -840,9 +843,7 @@ public abstract class ImportFromDBManagerBase implements ImportFromDBManager {
 
 			String defaultValue = Format.null2blank(columnData.defaultValue);
 			if (sqlType != null) {
-				if (SqlType.SQL_TYPE_ID_SERIAL.equals(sqlType.getId())
-						|| SqlType.SQL_TYPE_ID_BIG_SERIAL.equals(sqlType
-								.getId())) {
+				if (SqlType.isSerialType(sqlType)) {
 					defaultValue = "";
 				}
 			}

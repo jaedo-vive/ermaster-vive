@@ -1,0 +1,11 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<projectDescription>
+	<name>org.insightech.er.target</name>
+	<comment>Target platform for ERMaster-NHIT on Eclipse 2026-06 and GEF Classic 3.28.0.</comment>
+	<projects>
+	</projects>
+	<buildSpec>
+	</buildSpec>
+	<natures>
+	</natures>
+</projectDescription>

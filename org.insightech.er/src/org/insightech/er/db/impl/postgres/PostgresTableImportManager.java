@@ -3,10 +3,28 @@ package org.insightech.er.db.impl.postgres;
 import java.sql.PreparedStatement;
 import java.sql.ResultSet;
 import java.sql.SQLException;
+import java.util.HashMap;
+import java.util.Map;
 
 import org.insightech.er.editor.model.dbimport.ImportFromDBManagerEclipseBase;
 
 public class PostgresTableImportManager extends ImportFromDBManagerEclipseBase {
+
+	private static final Map<String, String> TYPE_ALIASES = new HashMap<String, String>();
+
+	static {
+		TYPE_ALIASES.put("integer", "int4");
+		TYPE_ALIASES.put("int", "int4");
+		TYPE_ALIASES.put("smallint", "int2");
+		TYPE_ALIASES.put("bigint", "int8");
+		TYPE_ALIASES.put("boolean", "bool");
+		TYPE_ALIASES.put("character", "bpchar");
+		TYPE_ALIASES.put("char", "bpchar");
+		TYPE_ALIASES.put("character varying", "varchar");
+		TYPE_ALIASES.put("bit varying", "varbit");
+		TYPE_ALIASES.put("time with time zone", "timetz");
+		TYPE_ALIASES.put("timestamp with time zone", "timestamptz");
+	}
 
 	@Override
 	protected String getTableNameWithSchema(String schema, String tableName) {
@@ -32,6 +50,10 @@ public class PostgresTableImportManager extends ImportFromDBManagerEclipseBase {
 	protected ColumnData createColumnData(ResultSet columnSet)
 			throws SQLException {
 		ColumnData columnData = super.createColumnData(columnSet);
+		columnData.type = normalizeTypeName(columnData.type);
+		if (columnData.type == null) {
+			return columnData;
+		}
 		String type = columnData.type.toLowerCase();
 
 		if (type.startsWith("time")) {
@@ -39,6 +61,36 @@ public class PostgresTableImportManager extends ImportFromDBManagerEclipseBase {
 		}
 
 		return columnData;
+	}
+
+	private String normalizeTypeName(String typeName) {
+		if (typeName == null) {
+			return null;
+		}
+
+		String type = typeName.toLowerCase();
+		int arrayDimension = 0;
+
+		while (type.endsWith("[]")) {
+			arrayDimension++;
+			type = type.substring(0, type.length() - 2);
+		}
+
+		if (type.startsWith("_") && type.length() > 1) {
+			arrayDimension++;
+			type = type.substring(1);
+		}
+
+		String normalized = TYPE_ALIASES.get(type);
+		if (normalized != null) {
+			type = normalized;
+		}
+
+		if (arrayDimension > 0) {
+			type = type + "[" + arrayDimension + "]";
+		}
+
+		return type;
 	}
 
 	@Override

@@ -1,9 +1,7 @@
 package org.insightech.er.editor.view.action.edit;
 
-import java.util.ArrayList;
 import java.util.List;
 
-import org.eclipse.gef.EditPart;
 import org.eclipse.gef.ui.actions.SelectionAction;
 import org.eclipse.ui.ISharedImages;
 import org.eclipse.ui.IWorkbenchPart;
@@ -38,9 +36,8 @@ public class CopyAction extends SelectionAction {
 	 * {@inheritDoc}
 	 */
 	@Override
-	@SuppressWarnings("unchecked")
 	protected boolean calculateEnabled() {
-		List<EditPart> list = new ArrayList<EditPart>(this.getSelectedObjects());
+		List<?> list = this.getSelectedObjects();
 
 		if (list.isEmpty()) {
 			return false;

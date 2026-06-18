@@ -7,11 +7,13 @@ import java.util.List;
 
 import org.eclipse.draw2d.Border;
 import org.eclipse.draw2d.ColorConstants;
+import org.eclipse.draw2d.Graphics;
 import org.eclipse.draw2d.Label;
 import org.eclipse.draw2d.MarginBorder;
 import org.eclipse.draw2d.PositionConstants;
 import org.eclipse.draw2d.RectangleFigure;
 import org.eclipse.draw2d.ToolbarLayout;
+import org.eclipse.draw2d.geometry.Rectangle;
 import org.eclipse.swt.graphics.Color;
 import org.insightech.er.ResourceString;
 import org.insightech.er.editor.view.figure.layout.TableLayout;
@@ -24,10 +26,12 @@ public class ModelPropertiesFigure extends RectangleFigure {
 
 	private Color foregroundColor;
 
-	public ModelPropertiesFigure() {
-		TableLayout layout = new TableLayout(2);
+	private TableLayout layout;
 
-		this.setLayoutManager(layout);
+	public ModelPropertiesFigure() {
+		this.layout = new TableLayout(2);
+
+		this.setLayoutManager(this.layout);
 	}
 
 	private void addRow(String name, String value, String tableStyle) {
@@ -93,6 +97,34 @@ public class ModelPropertiesFigure extends RectangleFigure {
 			} else {
 				this.foregroundColor = ColorConstants.white;
 			}
+		}
+	}
+
+	@Override
+	protected void paintClientArea(Graphics graphics) {
+		super.paintClientArea(graphics);
+
+		Color color = this.foregroundColor;
+		if (color == null) {
+			color = ColorConstants.black;
+		}
+
+		graphics.pushState();
+		try {
+			graphics.setForegroundColor(color);
+			graphics.setLineWidth(this.layout.getSeparatorWidth());
+
+			for (Rectangle rect : this.layout.getSeparators()) {
+				if (rect.width <= this.layout.getSeparatorWidth()) {
+					graphics.drawLine(rect.x, rect.y, rect.x, rect.y
+							+ rect.height);
+				} else {
+					graphics.drawLine(rect.x, rect.y, rect.x + rect.width,
+							rect.y);
+				}
+			}
+		} finally {
+			graphics.popState();
 		}
 	}
 }

@@ -371,7 +371,7 @@ public class ERDiagramEditor extends GraphicalEditorWithPalette {
 				IAction originalAction = registry.getAction(action.getId());
 
 				if (originalAction != null) {
-					selectionActionList.remove(originalAction);
+					selectionActionList.remove(originalAction.getId());
 				}
 				selectionActionList.add(action.getId());
 			}

@@ -16,11 +16,16 @@ import org.eclipse.core.resources.IFile;
 import org.eclipse.core.resources.IMarker;
 import org.eclipse.core.resources.IProject;
 import org.eclipse.core.resources.IResource;
+import org.eclipse.core.resources.IWorkspace;
 import org.eclipse.core.resources.IWorkspaceRunnable;
 import org.eclipse.core.resources.ResourcesPlugin;
 import org.eclipse.core.runtime.CoreException;
 import org.eclipse.core.runtime.IProgressMonitor;
+import org.eclipse.core.runtime.IStatus;
 import org.eclipse.core.runtime.NullProgressMonitor;
+import org.eclipse.core.runtime.Status;
+import org.eclipse.core.runtime.jobs.ISchedulingRule;
+import org.eclipse.core.runtime.jobs.Job;
 import org.eclipse.draw2d.geometry.Point;
 import org.eclipse.gef.DefaultEditDomain;
 import org.eclipse.gef.GraphicalViewer;
@@ -424,31 +429,46 @@ public class ERDiagramMultiPageEditor extends MultiPageEditorPart {
 	}
 
 	private void validate() {
-		if (this.diagram.getDiagramContents().getSettings()
-				.isSuspendValidator()) {
-			if (this.inputFile != null) {
-				try {
-					this.inputFile.deleteMarkers(null, true,
-							IResource.DEPTH_INFINITE);
-				} catch (CoreException e) {
-					ERDiagramActivator.showExceptionDialog(e);
-				}
-			}
+		final IFile targetInputFile = this.inputFile;
+		final ERDiagram targetDiagram = this.diagram;
 
-		} else {
-			IWorkspaceRunnable editorMarker = new IWorkspaceRunnable() {
-				public void run(IProgressMonitor monitor) throws CoreException {
-					if (inputFile != null) {
-						inputFile.deleteMarkers(null, true,
+		if (targetInputFile == null || targetDiagram == null) {
+			return;
+		}
+
+		final boolean suspendValidator = targetDiagram.getDiagramContents()
+				.getSettings().isSuspendValidator();
+		final IWorkspace workspace = ResourcesPlugin.getWorkspace();
+		final ISchedulingRule validateRule = workspace.getRuleFactory()
+				.modifyRule(targetInputFile);
+
+		Job validateJob = new Job("Validate ER diagram") {
+
+			@Override
+			protected IStatus run(IProgressMonitor monitor) {
+				IWorkspaceRunnable editorMarker = new IWorkspaceRunnable() {
+
+					@Override
+					public void run(IProgressMonitor monitor)
+							throws CoreException {
+						targetInputFile.deleteMarkers(null, true,
 								IResource.DEPTH_INFINITE);
 						clearMarkedObject();
 
+						if (suspendValidator || monitor.isCanceled()) {
+							return;
+						}
+
 						Validator validator = new Validator();
 						List<ValidateResult> errorList = validator
-								.validate(diagram);
+								.validate(targetDiagram);
 
 						for (ValidateResult error : errorList) {
-							IMarker marker = inputFile
+							if (monitor.isCanceled()) {
+								return;
+							}
+
+							IMarker marker = targetInputFile
 									.createMarker(IMarker.PROBLEM);
 
 							marker.setAttribute(IMarker.MESSAGE,
@@ -461,10 +481,15 @@ public class ERDiagramMultiPageEditor extends MultiPageEditorPart {
 							setMarkedObject(marker, error.getObject());
 						}
 
-						List<ValidateResult> todoList = validateTodo();
+						List<ValidateResult> todoList = validateTodo(
+								targetDiagram);
 
 						for (ValidateResult todo : todoList) {
-							IMarker marker = inputFile
+							if (monitor.isCanceled()) {
+								return;
+							}
+
+							IMarker marker = targetInputFile
 									.createMarker(IMarker.TASK);
 
 							marker.setAttribute(IMarker.MESSAGE,
@@ -477,21 +502,31 @@ public class ERDiagramMultiPageEditor extends MultiPageEditorPart {
 							setMarkedObject(marker, todo.getObject());
 						}
 					}
-				}
-			};
+				};
 
-			try {
-				ResourcesPlugin.getWorkspace().run(editorMarker, null);
-			} catch (CoreException e) {
-				ERDiagramActivator.showExceptionDialog(e);
+				try {
+					workspace.run(editorMarker, validateRule,
+							IWorkspace.AVOID_UPDATE, monitor);
+					return new Status(IStatus.OK,
+							ERDiagramActivator.PLUGIN_ID, "");
+
+				} catch (CoreException e) {
+					ERDiagramActivator.log(e);
+					return new Status(IStatus.ERROR,
+							ERDiagramActivator.PLUGIN_ID, e.getMessage(), e);
+				}
 			}
-		}
+		};
+
+		validateJob.setRule(validateRule);
+		validateJob.setSystem(true);
+		validateJob.schedule();
 	}
 
-	private List<ValidateResult> validateTodo() {
+	private List<ValidateResult> validateTodo(ERDiagram targetDiagram) {
 		List<ValidateResult> resultList = new ArrayList<ValidateResult>();
 
-		for (ERTable table : this.diagram.getDiagramContents().getContents()
+		for (ERTable table : targetDiagram.getDiagramContents().getContents()
 				.getTableSet()) {
 
 			String description = table.getDescription();
@@ -511,7 +546,7 @@ public class ERDiagramMultiPageEditor extends MultiPageEditorPart {
 			}
 		}
 
-		for (View view : this.diagram.getDiagramContents().getContents()
+		for (View view : targetDiagram.getDiagramContents().getContents()
 				.getViewSet().getList()) {
 
 			String description = view.getDescription();
@@ -525,7 +560,7 @@ public class ERDiagramMultiPageEditor extends MultiPageEditorPart {
 			}
 		}
 
-		for (Trigger trigger : this.diagram.getDiagramContents()
+		for (Trigger trigger : targetDiagram.getDiagramContents()
 				.getTriggerSet().getObjectList()) {
 
 			String description = trigger.getDescription();
@@ -533,7 +568,7 @@ public class ERDiagramMultiPageEditor extends MultiPageEditorPart {
 					trigger));
 		}
 
-		for (Sequence sequence : this.diagram.getDiagramContents()
+		for (Sequence sequence : targetDiagram.getDiagramContents()
 				.getSequenceSet().getObjectList()) {
 
 			String description = sequence.getDescription();

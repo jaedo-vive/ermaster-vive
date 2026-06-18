@@ -203,6 +203,9 @@ public class NormalColumn extends Column {
 			} else if (SqlType.valueOfId(SqlType.SQL_TYPE_ID_BIG_SERIAL)
 					.equals(type)) {
 				return SqlType.valueOfId(SqlType.SQL_TYPE_ID_BIG_INT);
+			} else if (SqlType.valueOfId(SqlType.SQL_TYPE_ID_SMALL_SERIAL)
+					.equals(type)) {
+				return SqlType.valueOfId(SqlType.SQL_TYPE_ID_SMALL_INT);
 			}
 
 			return type;
